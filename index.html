@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subtítulos en Tiempo Real</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Montserrat:wght@400;700&family=Lato:wght@400;700&family=Oswald:wght@400;700&family=Raleway:wght@400;700&family=Ubuntu:wght@400;700&family=Source+Sans+Pro:wght@400;700&family=Playfair+Display:wght@400;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: white;
+        }
+
+        .controls {
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.8);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .settings {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        #btnRecord {
+            background-color: #22c55e;
+            color: white;
+        }
+
+        #btnRecord.recording {
+            background-color: #ef4444;
+        }
+
+        .text-box {
+            margin-top: auto;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            text-align: center;
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        #subtitles {
+            font-size: 2.5rem;
+            font-weight: 600;
+            text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.8);
+            line-height: 1.4;
+            transition: all 0.3s;
+        }
+
+        .settings label {
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .settings select {
+            padding: 0.25rem;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background: white;
+            min-width: 150px;
+        }
+
+        .settings input[type="color"] {
+            width: 40px;
+            height: 30px;
+            padding: 0;
+            border: none;
+        }
+
+        .settings input[type="range"] {
+            width: 100px;
+        }
+
+        .settings input[type="number"] {
+            width: 60px;
+            padding: 0.25rem;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        .font-preview {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 1rem;
+            border-radius: 8px;
+            display: none;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        /* Estilos para previsualización de fuentes */
+        .font-roboto { font-family: 'Roboto', sans-serif; }
+        .font-opensans { font-family: 'Open Sans', sans-serif; }
+        .font-montserrat { font-family: 'Montserrat', sans-serif; }
+        .font-lato { font-family: 'Lato', sans-serif; }
+        .font-oswald { font-family: 'Oswald', sans-serif; }
+        .font-raleway { font-family: 'Raleway', sans-serif; }
+        .font-ubuntu { font-family: 'Ubuntu', sans-serif; }
+        .font-sourcesanspro { font-family: 'Source Sans Pro', sans-serif; }
+        .font-playfair { font-family: 'Playfair Display', serif; }
+        .font-merriweather { font-family: 'Merriweather', serif; }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button id="btnRecord">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+            Iniciar
+        </button>
+
+        <div class="settings">
+            <label>
+                Fuente
+                <select id="fontFamily">
+                    <option value="Roboto" class="font-roboto">Roboto</option>
+                    <option value="Open Sans" class="font-opensans">Open Sans</option>
+                    <option value="Montserrat" class="font-montserrat">Montserrat</option>
+                    <option value="Lato" class="font-lato">Lato</option>
+                    <option value="Oswald" class="font-oswald">Oswald</option>
+                    <option value="Raleway" class="font-raleway">Raleway</option>
+                    <option value="Ubuntu" class="font-ubuntu">Ubuntu</option>
+                    <option value="Source Sans Pro" class="font-sourcesanspro">Source Sans Pro</option>
+                    <option value="Playfair Display" class="font-playfair">Playfair Display</option>
+                    <option value="Merriweather" class="font-merriweather">Merriweather</option>
+                </select>
+            </label>
+
+            <label>
+                Color
+                <input type="color" id="textColor" value="#ffffff">
+            </label>
+
+            <label>
+                Tamaño
+                <input type="number" id="fontSize" value="40" min="20" max="80">
+            </label>
+
+            <label>
+                Fondo
+                <input type="color" id="bgColor" value="#000000">
+            </label>
+
+            <label>
+                Opacidad
+                <input type="range" id="opacity" min="0" max="100" value="50">
+            </label>
+
+            <label>
+                Grosor
+                <select id="fontWeight">
+                    <option value="400">Normal</option>
+                    <option value="700">Negrita</option>
+                </select>
+            </label>
+        </div>
+    </div>
+
+    <div class="text-box">
+        <div id="subtitles">Esperando voz...</div>
+    </div>
+
+    <script>
+        let recognition = null;
+        let isRecording = false;
+
+        const btnRecord = document.getElementById('btnRecord');
+        const subtitles = document.getElementById('subtitles');
+        const textColor = document.getElementById('textColor');
+        const fontSize = document.getElementById('fontSize');
+        const bgColor = document.getElementById('bgColor');
+        const opacity = document.getElementById('opacity');
+        const fontFamily = document.getElementById('fontFamily');
+        const fontWeight = document.getElementById('fontWeight');
+
+        // Aplicar configuraciones
+        function applySettings() {
+            subtitles.style.color = textColor.value;
+            subtitles.style.fontSize = `${fontSize.value}px`;
+            subtitles.style.fontFamily = `"${fontFamily.value}", sans-serif`;
+            subtitles.style.fontWeight = fontWeight.value;
+            document.body.style.backgroundColor = bgColor.value;
+            document.querySelector('.text-box').style.backgroundColor = 
+                `${bgColor.value}${Math.round(opacity.value * 2.55).toString(16).padStart(2, '0')}`;
+        }
+
+        // Event Listeners
+        [textColor, fontSize, bgColor, opacity, fontFamily, fontWeight].forEach(el => {
+            el.addEventListener('input', applySettings);
+        });
+
+        // Aplicar configuraciones iniciales
+        applySettings();
+
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'es-ES';
+
+            recognition.onstart = () => {
+                btnRecord.classList.add('recording');
+                btnRecord.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                        <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path>
+                        <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                    Detener
+                `;
+            };
+
+            recognition.onend = () => {
+                btnRecord.classList.remove('recording');
+                btnRecord.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                    Iniciar
+                `;
+                isRecording = false;
+            };
+
+            recognition.onresult = (event) => {
+                let finalTranscript = '';
+                let interimTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                
+                if (finalTranscript || interimTranscript) {
+                    subtitles.textContent = finalTranscript || interimTranscript;
+                    subtitles.classList.add('fade-in');
+                    setTimeout(() => subtitles.classList.remove('fade-in'), 300);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Error:', event.error);
+                isRecording = false;
+                btnRecord.classList.remove('recording');
+            };
+        } else {
+            subtitles.textContent = 'El reconocimiento de voz no está soportado en este navegador.';
+            btnRecord.disabled = true;
+        }
+
+        btnRecord.addEventListener('click', () => {
+            if (!isRecording) {
+                recognition.start();
+                isRecording = true;
+            } else {
+                recognition.stop();
+                isRecording = false;
+            }
+        });
+    </script>
+</body>
+</html>
